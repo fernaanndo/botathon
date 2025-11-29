@@ -2,23 +2,53 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (email.includes('director')) {
-      router.push('/Dashboard/Director');
-    } else if (email.includes('jefe')) {
-      router.push('/Dashboard/Jefe');   
-    } else {
-      setError('Usuario no reconocido.');
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Guardar información del usuario (opcional: en localStorage o contexto)
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Redirigir según el rol del usuario
+        const rol = data.user.rol?.toLowerCase();
+        if (rol === 'director' || rol?.includes('director')) {
+          router.push('/Dashboard/Director');
+        } else if (rol === 'jefe' || rol?.includes('jefe')) {
+          router.push('/Dashboard/Jefe');
+        } else {
+          // Si no hay un rol específico, redirigir a una página por defecto
+          router.push('/Dashboard');
+        }
+      } else {
+        setError(data.message || 'Credenciales incorrectas');
+      }
+    } catch (err) {
+      console.error('Error al iniciar sesión:', err);
+      setError('Error de conexión. Por favor, intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,9 +102,19 @@ export default function LoginPage() {
 
           <button 
             type="submit" 
-            className="w-full bg-teleton-red text-white py-3 rounded-lg font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            disabled={isLoading}
+            className="w-full bg-teleton-red text-white py-3 rounded-lg font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            Iniciar Sesión <ArrowRight size={20} />
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={20} />
+                Iniciando sesión...
+              </>
+            ) : (
+              <>
+                Iniciar Sesión <ArrowRight size={20} />
+              </>
+            )}
           </button>
         </form>
 
