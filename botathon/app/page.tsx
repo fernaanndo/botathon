@@ -32,14 +32,22 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         // Redirigir según el rol del usuario
-        const rol = data.user.rol?.toLowerCase();
-        if (rol === 'director' || rol?.includes('director')) {
+        const rol = data.user.rol?.toLowerCase().trim() || '';
+        console.log('Rol recibido del backend:', data.user.rol, '-> Normalizado:', rol);
+        
+        // Verificar si es director
+        if (rol.includes('director')) {
           router.push('/Dashboard/Director');
-        } else if (rol === 'jefe' || rol?.includes('jefe')) {
+        } 
+        // Verificar si es jefe de gestión o jefe
+        else if (rol.includes('jefe de gestion') || rol.includes('jefe de gestión') || rol.includes('jefe')) {
           router.push('/Dashboard/Jefe');
-        } else {
-          // Si no hay un rol específico, redirigir a una página por defecto
-          router.push('/Dashboard');
+        } 
+        // Si no hay un rol específico, redirigir a una página por defecto
+        else {
+          console.warn('Rol no reconocido:', data.user.rol);
+          setError(`Rol no reconocido: ${data.user.rol}. Contacta al administrador.`);
+          setIsLoading(false);
         }
       } else {
         setError(data.message || 'Credenciales incorrectas');
