@@ -58,6 +58,49 @@ app.post('/api/login', (req, res) => {
 
 const PORT = process.env.PORT;
 
+
+// Endpoint para obtener información del instituto por ID
+app.get('/api/instituto/:id', (req, res) => {
+  const institutoId = req.params.id;
+  
+  // Validar que se proporcione el ID
+  if (!institutoId) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID del instituto es requerido'
+    });
+  }
+  
+  // Consulta para obtener la información completa del instituto
+  const query = 'SELECT * FROM Institutos WHERE Id = ?';
+  
+  db.query(query, [institutoId], (err, results) => {
+    if (err) {
+      console.error('Error en la consulta:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor'
+      });
+    }
+    
+    // Verificar si se encontró el instituto
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Instituto no encontrado'
+      });
+    }
+    
+    // Instituto encontrado - devolver información completa
+    const instituto = results[0];
+    res.status(200).json({
+      success: true,
+      message: 'Instituto encontrado',
+      instituto: instituto
+    });
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
